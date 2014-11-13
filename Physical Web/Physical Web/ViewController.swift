@@ -9,9 +9,12 @@
 import UIKit
 import CoreBluetooth
 
-class ViewController: UIViewController, CBCentralManagerDelegate {
+class ViewController: UIViewController, CBCentralManagerDelegate, UITableViewDataSource {
 
+    @IBOutlet var tableView:UITableView?
+    
     var btleManager:CBCentralManager?
+    var beacons = [PhysicalWebBeacon]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -46,33 +49,43 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
         if let info = advertisementData[CBAdvertisementDataServiceDataKey] as? Dictionary<CBUUID,NSData> {
             if let data = info[CBUUID(string: "FED8")] {
                 if let validData = PhysicalWebBeacon.validatePhysicalWebGadget(data) {
-                    let url =  NSString(data: (validData["URL"] as NSData), encoding: NSASCIIStringEncoding)
-                    println(url)
+                    beacons.append(PhysicalWebBeacon(scannedValues:validData))
                 }
             }
             
         }
     }
     
+    // MARK: - UITtableViewDelegate
     
-    /**
-    NSDictionary *info = [advertisementData objectForKey:CBAdvertisementDataServiceDataKey];
-    NSData *data = [info objectForKey:[CBUUID UUIDWithString:URIBEACON_SERVICE]];
-    **/
-    
-    /**
-    
-    
-    **/
-    
-    /**
-    func centralManager(central: CBCentralManager!, didRetrieveConnectedPeripherals peripherals: [AnyObject]!) {
-    
+    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+        return 1
     }
-    **/
+    
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return beacons.count
+    }
+    
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCellWithIdentifier("BeaconCell", forIndexPath: indexPath) as UITableViewCell
+        cell.textLabel.text = beacons[indexPath.row].url?.absoluteString
+        return cell
+    }
 }
 
 class PhysicalWebBeacon {
+    var name:String?
+    var url:NSURL?
+    var batteryLevel:Int?
+    var flags:Int?
+    
+    init(scannedValues:Dictionary<NSString,AnyObject>) {
+        name = scannedValues["Name"] as? String
+        flags = scannedValues["Flags"] as? Int
+        batteryLevel = scannedValues["PowerLevel"] as? Int
+        let urlString = NSString(data: (scannedValues["URL"] as NSData), encoding: NSASCIIStringEncoding)
+        url = NSURL(string: urlString!)
+    }
     
     class func validatePhysicalWebGadget(data:NSData) -> Dictionary<NSString,AnyObject>? {
         var dataArray = [UInt8](count:data.length, repeatedValue:0)
