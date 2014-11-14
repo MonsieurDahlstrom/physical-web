@@ -50,6 +50,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, UITableViewDat
             if let data = info[CBUUID(string: "FED8")] {
                 if let validData = PhysicalWebBeacon.validatePhysicalWebGadget(data) {
                     beacons.append(PhysicalWebBeacon(scannedValues:validData))
+                    tableView?.beginUpdates()
+                    let indexpath = NSIndexPath(forRow: beacons.count-1, inSection: 0)
+                    tableView?.insertRowsAtIndexPaths([indexpath], withRowAnimation: .Automatic)
+                    tableView?.endUpdates()
                 }
             }
             
@@ -68,7 +72,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, UITableViewDat
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("BeaconCell", forIndexPath: indexPath) as UITableViewCell
-        cell.textLabel.text = beacons[indexPath.row].url?.absoluteString
+        cell.textLabel.text = beacons[indexPath.row].urlString!
         return cell
     }
 }
@@ -76,6 +80,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, UITableViewDat
 class PhysicalWebBeacon {
     var name:String?
     var url:NSURL?
+    var urlString:String?
     var batteryLevel:Int?
     var flags:Int?
     
@@ -83,7 +88,7 @@ class PhysicalWebBeacon {
         name = scannedValues["Name"] as? String
         flags = scannedValues["Flags"] as? Int
         batteryLevel = scannedValues["PowerLevel"] as? Int
-        let urlString = NSString(data: (scannedValues["URL"] as NSData), encoding: NSASCIIStringEncoding)
+        urlString = NSString(data: (scannedValues["URL"] as NSData), encoding: NSASCIIStringEncoding)
         url = NSURL(string: urlString!)
     }
     
